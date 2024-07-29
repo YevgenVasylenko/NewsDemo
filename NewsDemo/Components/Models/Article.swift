@@ -8,6 +8,7 @@
 import Foundation
 
 struct Article: Codable, Hashable {
+    var id = UUID()
     let source: Source
     let author: String?
     let title: String
@@ -15,6 +16,10 @@ struct Article: Codable, Hashable {
     let url: String
     let urlToImage: String?
     let publishedAt: String
+    
+    private enum CodingKeys: String, CodingKey {
+        case source, author, title, description, url, urlToImage, publishedAt
+    }
 }
 
 extension Article {

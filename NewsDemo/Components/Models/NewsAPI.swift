@@ -14,7 +14,6 @@ struct NewsAPIResponse: Codable {
 enum NewsAPI {
     
     enum Error: LocalizedError {
-        case invalidParameters
         case invalidURL
         case underlying(Swift.Error)
     }
@@ -33,6 +32,7 @@ enum NewsAPI {
     }
 }
 
+// MARK: - Private
 
 private extension NewsAPI {
     
@@ -47,6 +47,7 @@ private extension NewsAPI {
         do {
             let request = URLRequest(url: url)
             let (data, _) = try await URLSession.shared.data(for: request)
+            
             let response = try JSONDecoder().decode(Response.self, from: data)
             
             return .success(response)

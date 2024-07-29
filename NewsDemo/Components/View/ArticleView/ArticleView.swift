@@ -8,11 +8,32 @@
 import SwiftUI
 
 struct ArticleView: View {
+    @State
+    private var deleteAlertPresented = false
+
+    private var isArticleSaved: Bool
+    private let article: Article
+    private let needsConfirmForDelete: Bool
+    private let saveTap: () -> Void
     
-    let article: Article
+    init(
+         isArticleSaved: Bool,
+         article: Article,
+         needsConfirmForDelete: Bool,
+         saveTap: @escaping () -> Void
+    ) {
+        self.isArticleSaved = isArticleSaved
+        self.article = article
+        self.needsConfirmForDelete = needsConfirmForDelete
+        self.saveTap = saveTap
+    }
     
     var body: some View {
         content()
+            .deleteAlert(
+                isPresented: $deleteAlertPresented,
+                action: saveTap
+            )
     }
 }
 
@@ -21,67 +42,72 @@ struct ArticleView: View {
 private extension ArticleView {
     
     func content() -> some View {
-        VStack(spacing: 0) {
-            if article.urlToImage != nil {
-                articleImage()
-            }
+        VStack(spacing: 10) {
+            articleImage()
             articleMain()
         }
-        .background(Color.backgoundOne)
+        .padding(15)
+        .background(Color.backgroundOne)
         .cornerRadius(30)
-        .padding(5)
     }
     
+    @ViewBuilder
     func articleImage() -> some View {
-            AsyncImage(url: URL(string: article.urlToImage ?? "")) { phase in
+        if let urlToImage = article.urlToImage,
+           let url = URL(string: urlToImage)
+        {
+            AsyncImage(url: url) { phase in
                 phaseImage(phase: phase)
             }
             .frame(height: 100)
             .cornerRadius(30)
-            .padding(10)
+        }
     }
     
     @ViewBuilder
     func phaseImage(phase: AsyncImagePhase) -> some View {
         switch phase {
-        case .empty:
-            EmptyView()
         case .success(let image):
             image
                 .resizable()
                 .scaledToFill()
-        case .failure:
-            EmptyView()
-        @unknown default:
+        default:
             EmptyView()
         }
     }
     
     func articleMain() -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 5) {
             sourceAndDate()
             articleBody()
         }
-        .padding(20)
-        .cornerRadius(30)
     }
     
     func sourceAndDate() -> some View {
         HStack {
+            if let author = article.author {
+                articleDetails(name: author)
+                sourceSpacer()
+            }
             articleDetails(name: article.source.name)
             Spacer()
             articleDetails(name: article.publishedAt.articleDate())
         }
     }
     
+    func sourceSpacer() -> some View {
+        Text(" • ")
+    }
+    
     func articleDetails(name: String) -> some View {
         Text(name)
             .foregroundStyle(Color.textLight)
+            .lineLimit(1)
             .font(.system(
                 size: 14,
                 weight: .ultraLight,
-                design: .monospaced)
-            )
+                design: .monospaced
+            ))
     }
     
     func articleBody() -> some View {
@@ -93,8 +119,24 @@ private extension ArticleView {
     }
     
     func saveButton() -> some View {
-        Toggle("", isOn: .constant(false))
-            .toggleStyle(SaveToggleStyle())
+        Button(
+            action: {
+                if needsConfirmForDelete {
+                    deleteAlertPresented = true
+                }
+                else {
+                    saveTap()
+                }
+            },
+            label: {
+                Image(systemName: "arrow.down.doc.fill")
+                    .font(.system(size: 25))
+                    .foregroundColor(
+                        isArticleSaved ? .accent : .notSelected
+                    )
+                    .frame(width: 44, height: 44)
+            }
+        )
     }
     
     func title() -> some View {
@@ -105,13 +147,37 @@ private extension ArticleView {
             .font(.system(size: 16, weight: .bold, design: .serif))
     }
     
+    @ViewBuilder
     func goToSourceButton() -> some View {
-        Link(
-            destination: URL(string: article.url)!,
-            label: {
-            Image(systemName: "arrowshape.right.fill")
-                    .font(.system(size: 25))
-        })
+        if let url = URL(string: article.url) {
+            Link(
+                destination: url,
+                label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 25))
+                }
+            )
+            .frame(width: 44, height: 44)
+        }
+    }
+}
+
+private extension View {
+    func deleteAlert(
+        isPresented: Binding<Bool>,
+        action: @escaping () -> Void
+    ) -> some View {
+        alert(
+            "Are you sure you want delete from saved",
+            isPresented: isPresented,
+            actions: {
+                Button(
+                    "Remove",
+                    role: .destructive,
+                    action: action
+                )
+            }
+        )
     }
 }
 
@@ -126,5 +192,10 @@ private extension ArticleView {
         publishedAt: "2024-07-25T08:58:23Z"
     )
     
-    return ArticleView(article: article)
+    return ArticleView(
+        isArticleSaved: true,
+        article: article,
+        needsConfirmForDelete: true,
+        saveTap: { }
+    )
 }

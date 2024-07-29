@@ -7,8 +7,9 @@
 
 import SwiftUI
 
+@MainActor
 struct MainView: View {
-    
+        
     var body: some View {
         TabView {
             homeTab()
@@ -20,27 +21,32 @@ struct MainView: View {
 // MARK: - Private
 
 private extension MainView {
-    
     func homeTab() -> some View {
-        HomeView()
-            .tabItem {
-                Label(
-                    "Home",
-                    systemImage: "house.fill"
-                )
-            }
-//            .toolbarBackground(.red, for: .tabBar)
+        ArticleListView(articleSource: .remote)
+            .tabItemView(label: "Home", iconName: "house.fill")
     }
     
     func savedTab() -> some View {
-        SavedView()
+        ArticleListView(articleSource: .saved)
+            .tabItemView(label: "Saved", iconName: "tray.and.arrow.down.fill")
+    }
+}
+
+private extension View {
+    
+    func tabItemView(
+        label: LocalizedStringKey,
+        iconName: String
+    ) -> some View {
+        self
             .tabItem {
                 Label(
-                    "Saved",
-                    systemImage: "tray.and.arrow.down.fill"
+                    label,
+                    systemImage: iconName
                 )
             }
-            
+            .background(Color.backgroundTwo)
+            .padding(.bottom, 10)
     }
 }
 
